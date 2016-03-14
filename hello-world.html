@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+<meta charset="utf-8">
+<title>My Songs</title>
+<style type="text/css">
+#mainContent {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: xx-large;
+	font-weight: bold;
+	background-color: #E3F0FB;
+	border-radius: 4px;
+	padding: 10px;
+	text-align: center;
+}
+.buttonStyle {
+	border-radius: 4px;
+	border: thin solid #F0E020;
+	padding: 5px;
+	background-color: #F8F094;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	font-weight: bold;
+	color: #663300;
+	width: 75px;
+}
+
+.song{
+	
+}
+
+.buttonStyle:hover {
+	border: thin solid #FFCC00;
+	background-color: #FCF9D6;
+	color: #996633;
+	cursor: pointer;
+}
+.buttonStyle:active {
+	border: thin solid #99CC00;
+	background-color: #F5FFD2;
+	color: #669900;
+	cursor: pointer;
+}
+
+</style>
+</head>
+
+<body>
+<div id="mainContent">
+	<p id="helloText"></p>
+	<textarea id="embed" cols="70" rows="5">
+	</textarea>
+	<button id="clickButton" class="buttonStyle">add</button>
+	<div id="songs">
+		<div id="songtemplate" class="song" style="visibility:hidden">
+			<div id="songcontent" style="float:left;"></div>
+			<div id="songoptions">
+				<button>X</button>
+			</div>
+			<div style="clear:left;"></div>
+		</div>
+	</div>
+</div>
+<script> 
+var myButton = document.getElementById("clickButton");
+var myText = document.getElementById("helloText");
+
+myButton.addEventListener('click', addSong, false)
+
+function addSong() {
+	var song = document.getElementById("embed").value;
+	
+	var songs = document.getElementById("songs");
+	var songid = songs.getElementsByClassName("song").length;
+	
+	var songdiv = document.createElement("div");
+	songdiv.id = "song_" + songid;
+	songdiv.className = "song";
+	songdiv.innerHTML = document.getElementById("songtemplate").innerHTML;
+	var elements = songdiv.getElementsByTagName("div");
+	for(var d in elements){
+		elements[d].id = elements[d].id + "_" + songid;
+	}
+	songs.appendChild(songdiv);
+	
+	document.getElementById("songcontent" + "_" + songid).innerHTML = song;
+	document.getElementById("songoptions" + "_" + songid).getElementsByTagName("button")[0].addEventListener('click', function(){removeSong(songid)}, false)
+	
+	myText.textContent = "new song added";
+}
+
+function removeSong(id){
+	var song = document.getElementById("song_" + id);
+	document.getElementById("songs").removeChild(song);
+}
+</script>
+
+</body>
+</html>
