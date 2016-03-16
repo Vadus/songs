@@ -4,21 +4,31 @@
         <title>Soundcloud Test</title>
     </head>
     <body>
-        <div id="songname"></div>
-        <iframe id="sc-widget" scrolling="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/231715226&amp;color=ff5500&amp;auto_play=false&amp;hide_related=false&amp;show_comments=true&amp;show_user=true&amp;show_reposts=false" frameborder="no" height="166" width="100%"></iframe>
-        <a href="https://w.soundcloud.com/player/api_playground.html">Soundcloud Playground</a>
+        <ul>
+          <li>
+            <span>Lukas Graham - 7 Years</span>
+            <img class="scButton" src="http://findicons.com/files/icons/129/soft_scraps/256/button_play_01.png" alt="https://soundcloud.com/lukasgraham/7-years" style="width: 20px; height: 20px;"/>
+            <br/><a href="https://soundcloud.com/lukasgraham/7-years" target="_blank" >Source</a>
+          </li>
+        </ul>
+        <iframe id="sc-widget" scrolling="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/231715226" frameborder="no"></iframe>
+        
+    
         <script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
         <script type="text/javascript">
+          
+          
           (function(){
-            var widgetIframe = document.getElementById('sc-widget'),
-                widget       = SC.Widget(widgetIframe);
-        
-                widget.bind(SC.Widget.Events.READY, function() {
-                widget.bind(SC.Widget.Events.PLAY, function() {
+            var widgetIframe = document.getElementById('sc-widget');
+            var widget       = SC.Widget(widgetIframe);
+            var songElements = document.querySelectorAll('.scButton');
+            
+            widget.bind(SC.Widget.Events.READY, function() {
+              widget.bind(SC.Widget.Events.PLAY, function() {
                 // get information about currently playing sound
                 widget.getCurrentSound(function(currentSound) {
                   console.log('sound ' + currentSound.title + 'began to play');
-                  document.getElementById("songname").innerHTML = currentSound.username + " - " + currentSound.title;
+                  //document.getElementById("songname").innerHTML = currentSound.username + " - " + currentSound.title;
                 });
               });
               // get current level of volume
@@ -29,7 +39,22 @@
               widget.setVolume(50);
               // get the value of the current position
             });
-        
+            
+            console.log("found " + songElements.length + " song elements");
+            for( i in songElements) {
+              var songElement = songElements[i];
+              var songUrl = songElement.alt;
+              if(songUrl != undefined){
+                console.log("Setting a funtion for img " + songUrl);
+                songElement.onclick = function(e){
+                  var songUrl = e.target.alt;
+                  console.log("Loading video "+ songUrl);
+                  widget.load(songUrl, {
+                    auto_play: true
+                  });
+                }
+              }
+            }
           }());
         </script>
     </body>

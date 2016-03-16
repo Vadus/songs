@@ -7,7 +7,7 @@
     <ul>
       <li>
         <span onclick="playVideo('KuAXv5qaSbQ');">Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
-        <img src="http://findicons.com/files/icons/129/soft_scraps/256/button_play_01.png" style="width: 20px; height: 20px;" onclick="playVideo('KuAXv5qaSbQ');"/>
+        <img class="ytButton" src="http://findicons.com/files/icons/129/soft_scraps/256/button_play_01.png" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
         <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
       </li>
     </ul>
@@ -15,13 +15,14 @@
     <div id="player"></div>
 
     <script>
+    
       // 2. This code loads the IFrame Player API code asynchronously.
       var tag = document.createElement('script');
 
       tag.src = "https://www.youtube.com/iframe_api";
       var firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
+    
       // 3. This function creates an <iframe> (and YouTube player)
       //    after the API code downloads.
       var player;
@@ -40,6 +41,23 @@
       // 4. The API will call this function when the video player is ready.
       function onPlayerReady(event) {
         //event.target.playVideo();
+        
+        var songElements = document.querySelectorAll('.ytButton');
+        console.log("found " + songElements.length + " song elements");
+        for( i in songElements) {
+          var songElement = songElements[i];
+          var songUrl = songElement.alt;
+          if(songUrl != undefined){
+            console.log("Setting click for play button with url " + songUrl);
+            songElement.onclick = function(e){
+              var songUrl = e.target.alt;
+              console.log("Loading video "+ songUrl);
+              player.loadVideoByUrl({'mediaContentUrl': songUrl});
+              player.playVideo();
+              //playVideo(scUrl)
+            }
+          }
+        };
       }
       
       function playVideo(aVideoId){
