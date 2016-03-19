@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>My Songs</title>
+        <script type="text/javascript" src="https://w.soundcloud.com/player/api.js"></script>
     </head>
   <body>
     <ul>
@@ -17,123 +18,148 @@
       </li>
     </ul>
     <!-- 1. The <iframe> (and video yt_player) will replace this <div> tag. -->
-    <div id="yt_player"></div>
-    <div id="sc_player">
+    <div id="yt_player" class="player" style="display: none;"></div>
+    <div id="sc_player" class="player" style="display: none;">
         <iframe id="sc-widget" scrolling="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/231715226" frameborder="no"></iframe>
     </div>
 
     <script type="text/javascript">
     
-    console.log("Init Youtube");
-    
-      // 2. This code loads the IFrame Player API code asynchronously.
-      var tag = document.createElement('script');
-
-      tag.src = "https://www.youtube.com/iframe_api";
-      var firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    
-      // 3. This function creates an <iframe> (and YouTube player)
-      //    after the API code downloads.
-      var ytPlayer;
-      function onYouTubeIframeAPIReady() {
-        ytPlayer = new YT.Player('yt_player', {
+      var Player = function(){
+        this.ytPlayerId;
+        this.ytPlayer;
+        this.scWidgetId;
+        this.scPlayerId;
+        this.scPlayer;
+      };
+      
+      Player.prototype.playVideo = function(videoId, videoSource){
+        
+        console.log("playing video " + videoId)
+        
+        if(videoSource == "YT"){
+          this.togglePlayer(this.ytPlayerId);
+          this._playVideoYt(videoId);
+        }
+        else if (videoSource == "SC"){
+          this.togglePlayer(this.scPlayerId);
+          this._playVideoSc(videoId);
+        }
+      };
+      
+      Player.prototype.togglePlayer = function(playerId){
+        for (var i = 0, el; el = document.getElementsByClassName("player")[i]; i++){
+          el.style.display = "none";
+        }
+        document.getElementById(playerId).style.display = "block";
+      }
+      
+      Player.prototype.initYoutube = function(playerId){
+        this.ytPlayerId = playerId;
+        this.ytPlayer = new YT.Player(playerId, {
           height: '390',
           width: '640',
-          videoId: 'KuAXv5qaSbQ',
+          videoId: 'M7lc1UVf-VE',
           events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
+            'onReady': this._onYtPlayerReady,
+            'onStateChange': this._onYtPlayerStateChange
           }
         });
-      }
-
-      // 4. The API will call this function when the video player is ready.
-      function onPlayerReady(event) {
-        //event.target.playVideo();
+      };
+      
+      Player.prototype.initSoundcloud = function(playerId, iframeId){
         
-        var songElements = document.querySelectorAll('.ytButton');
-        console.log("found " + songElements.length + " song elements");
-        for( i in songElements) {
-          var songElement = songElements[i];
-          var songUrl = songElement.alt;
-          if(songUrl != undefined){
-            console.log("Setting click for play button with url " + songUrl);
-            songElement.onclick = function(e){
-              var songUrl = e.target.alt;
-              console.log("Loading video "+ songUrl);
-              ytPlayer.loadVideoByUrl({'mediaContentUrl': songUrl});
-              ytPlayer.playVideo();
-              //playVideo(scUrl)
-            }
-          }
-        };
-      }
-      
-      function playVideo(aVideoId){
-          console.log("playing video " + aVideoId)
-          ytPlayer.loadVideoById({'videoId': aVideoId});
-          ytPlayer.playVideo();
-      }
-
-      // 5. The API calls this function when the player's state changes.
-      //    The function indicates that when playing a video (state=1),
-      //    the player should play for six seconds and then stop.
-      var done = false;
-      function onPlayerStateChange(event) {
-        if (event.data == YT.PlayerState.PLAYING && !done) {
-          setTimeout(stopVideo, 6000);
-          done = true;
-        }
-      }
-      function stopVideo() {
-        ytPlayer.stopVideo();
-      }
-    </script>
-    
-    <script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
-    <script type="text/javascript">
-      
-      console.log("Init Soundcloud");
-      
-      (function(){
-        var widgetIframe = document.getElementById('sc-widget');
-        var widget       = SC.Widget(widgetIframe);
+        console.log("Init Soundcloud");
+        
+        this.scPlayerId = playerId;
+        this.scWidgetId = iframeId;
+        this.scPlayer   = SC.Widget(this.scWidgetId);
+        
+        
+        //this.scPlayer.bind(SC.Widget.Events.READY, function() {
+          //this.scPlayer.bind(SC.Widget.Events.PLAY, function() {
+            // get information about currently playing sound
+            //this.scPlayer.getCurrentSound(function(currentSound) {
+              //console.log('sound ' + currentSound.title + 'began to play');
+              //document.getElementById("songname").innerHTML = currentSound.username + " - " + currentSound.title;
+            //});
+          //});
+          
+          // set new volume level
+          // widget.setVolume(50);
+          // get the value of the current position
+        //});
+        
         var songElements = document.querySelectorAll('.scButton');
         
-        widget.bind(SC.Widget.Events.READY, function() {
-          widget.bind(SC.Widget.Events.PLAY, function() {
-            // get information about currently playing sound
-            widget.getCurrentSound(function(currentSound) {
-              console.log('sound ' + currentSound.title + 'began to play');
-              //document.getElementById("songname").innerHTML = currentSound.username + " - " + currentSound.title;
-            });
-          });
-          // get current level of volume
-          widget.getVolume(function(volume) {
-            console.log('current volume value is ' + volume);
-          });
-          // set new volume level
-          widget.setVolume(50);
-          // get the value of the current position
-        });
-        
         console.log("found " + songElements.length + " song elements");
-        for( i in songElements) {
+        for( var i in songElements) {
           var songElement = songElements[i];
           var scUrl = songElement.alt;
           if(scUrl != undefined){
             console.log("Setting a funtion for img " + scUrl);
             songElement.onclick = function(e){
               var scUrl = e.target.alt;
-              console.log("Setting click funtion for img " + scUrl);
-              widget.load(scUrl, {
-                auto_play: true
-              });
+              playVideo(scUrl, "SC");
             }
           }
         }
-      }());
+      }
+      
+      Player.prototype._playVideoYt = function(videoUrl){
+        this.ytPlayer.loadVideoByUrl({'mediaContentUrl': videoUrl});
+        this.ytPlayer.playVideo();
+      }
+      
+      Player.prototype._playVideoSc = function(videoUrl){
+        this.scPlayer.load(videoUrl, {
+          auto_play: true
+        });
+      };
+      
+      Player.prototype._onYtPlayerReady = function(){
+        var songElements = document.querySelectorAll('.ytButton');
+        console.log("found " + songElements.length + " song elements");
+        for(var i in songElements) {
+          var songElement = songElements[i];
+          var songUrl = songElement.alt;
+          if(songUrl != undefined){
+            console.log("Setting click for play button with url " + songUrl);
+            songElement.onclick = function(e){
+              var videoUrl = e.target.alt;
+              console.log("Loading video "+ videoUrl);
+              playVideo(videoUrl, "YT")
+            }
+          }
+        };
+      };
+      
+      Player.prototype._onYtPlayerStateChange = function(){
+        
+      };
+      
+      var player = new Player();
+      player.initSoundcloud("sc_player", "sc-widget");
+      
+      function playVideo(videoUrl, videoSource){
+        player.playVideo(videoUrl, videoSource)
+      }
+      
+      // 2. This code loads the IFrame Player API code asynchronously.
+      var tag = document.createElement('script');
+  
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+      // 3. This function creates an <iframe> (and YouTube player)
+      //    after the API code downloads.
+      function onYouTubeIframeAPIReady() {
+        console.log("Init Youtube");
+        player.initYoutube("yt_player");
+        
+      }
+      
     </script>
   </body>
 </html>
