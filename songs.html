@@ -7,14 +7,20 @@
   <body>
     <ul>
       <li>
-        <span>Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
-        <img class="ytButton" src="http://findicons.com/files/icons/129/soft_scraps/256/button_play_01.png" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
-        <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
+        <div id="1">
+          <span>Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
+          <img id="ytButtonStart_1" class="ytButtonStart" src="http://songs.klarblick.org/static/yt_play.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
+          <img id="ytButtonStop_1" class="ytButtonStop" src="http://songs.klarblick.org/static/yt_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
+          <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
+        </div>
       </li>
       <li>
-        <span>Lukas Graham - 7 Years</span>
-        <img class="scButton" src="http://findicons.com/files/icons/129/soft_scraps/256/button_play_01.png" alt="https://soundcloud.com/lukasgraham/7-years" style="width: 20px; height: 20px;"/>
-        <br/><a href="https://soundcloud.com/lukasgraham/7-years" target="_blank" >Source</a>
+        <div id="2">
+          <span>Lukas Graham - 7 Years</span>
+          <img id="scButtonStart_2" class="scButtonStart" src="http://songs.klarblick.org/static/sc_play.svg" alt="https://soundcloud.com/lukasgraham/7-years" style="width: 20px; height: 20px;"/>
+          <img id="scButtonStop_2" class="scButtonStop" src="http://songs.klarblick.org/static/sc_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
+          <br/><a href="https://soundcloud.com/lukasgraham/7-years" target="_blank" >Source</a>
+        </div>
       </li>
     </ul>
     <!-- 1. The <iframe> (and video yt_player) will replace this <div> tag. -->
@@ -31,28 +37,54 @@
         this.scWidgetId;
         this.scPlayerId;
         this.scPlayer;
+        
+        this.currentVideo;
       };
       
-      Player.prototype.playVideo = function(videoId, videoSource){
+      Player.prototype.playVideo = function(songId, songKey, songSource){
         
-        console.log("playing video " + videoId)
+        console.log("playing video " + songKey)
         
-        if(videoSource == "YT"){
-          this.togglePlayer(this.ytPlayerId);
-          this._playVideoYt(videoId);
+        if(songSource == "YT"){
+          this._togglePlayer(this.ytPlayerId);
+          this._playVideoYt(songKey);
         }
-        else if (videoSource == "SC"){
-          this.togglePlayer(this.scPlayerId);
-          this._playVideoSc(videoId);
+        else if (songSource == "SC"){
+          this._togglePlayer(this.scPlayerId);
+          this._playVideoSc(songKey);
         }
+        this._togglePlayButton(songId, songSource, "Start");
+        
+        this.currentVideo = songKey;
+        this.currentPlayer = songSource;
       };
       
-      Player.prototype.togglePlayer = function(playerId){
+      Player.prototype.stopVideo = function(songId, songSource){
+        
+        console.log("stopping video...");
+        if(songSource == "YT"){
+          this._stopVideoYt();
+        }
+        else if (songSource == "SC"){
+          this._stopVideoSc();
+        }
+        this._togglePlayButton(songId, songSource, "Stop");
+      };
+      
+      Player.prototype._togglePlayer = function(playerId){
         for (var i = 0, el; el = document.getElementsByClassName("player")[i]; i++){
           el.style.display = "none";
         }
         document.getElementById(playerId).style.display = "block";
-      }
+      };
+      
+      Player.prototype._togglePlayButton = function(songId, songSource, startStop){
+        var buttonId = songSource.toLowerCase() + "Button" + startStop + "_" + songId;
+        document.getElementById(buttonId).style.display = "none";
+        
+        var otherButtonId = songSource.toLowerCase() + "Button" + (startStop == "Start"? "Stop":"Start") + "_" + songId;
+        document.getElementById(otherButtonId).style.display = "inline";
+      };
       
       Player.prototype.initYoutube = function(playerId){
         this.ytPlayerId = playerId;
@@ -90,26 +122,40 @@
           // get the value of the current position
         //});
         
-        var songElements = document.querySelectorAll('.scButton');
-        
-        console.log("found " + songElements.length + " song elements");
-        for( var i in songElements) {
-          var songElement = songElements[i];
-          var scUrl = songElement.alt;
+        var scButtonsStart = document.querySelectorAll('.scButtonStart');
+        console.log("found " + scButtonsStart.length + " song elements");
+        for( var i in scButtonsStart) {
+          var scButtonStart = scButtonsStart[i];
+          var scUrl = scButtonStart.alt;
           if(scUrl != undefined){
-            console.log("Setting a funtion for img " + scUrl);
-            songElement.onclick = function(e){
+            //console.log("Setting a funtion for img " + scUrl);
+            scButtonStart.onclick = function(e){
+              var songId = e.target.id.substring("scButtonStart_".length);
               var scUrl = e.target.alt;
-              playVideo(scUrl, "SC");
-            }
+              playVideo(songId, scUrl, "SC");
+            };
           }
         }
-      }
+        
+        var scButtonsStop = document.querySelectorAll(".scButtonStop");
+        console.log("found " + scButtonsStop.length + " song elements");
+        for( var i in scButtonsStop) {
+          var scButtonStop = scButtonsStop[i];
+          scButtonStop.onclick = function(e){
+            var songId = e.target.id.substring("scButtonStop_".length);
+            stopVideo(songId, "SC");
+          };
+        }
+      };
       
       Player.prototype._playVideoYt = function(videoUrl){
         this.ytPlayer.loadVideoByUrl({'mediaContentUrl': videoUrl});
         this.ytPlayer.playVideo();
-      }
+      };
+      
+      Player.prototype._stopVideoYt = function(){
+        this.ytPlayer.stopVideo();
+      };
       
       Player.prototype._playVideoSc = function(videoUrl){
         this.scPlayer.load(videoUrl, {
@@ -117,19 +163,34 @@
         });
       };
       
+      Player.prototype._stopVideoSc = function(){
+        this.scPlayer.pause();
+      }
+      
       Player.prototype._onYtPlayerReady = function(){
-        var songElements = document.querySelectorAll('.ytButton');
-        console.log("found " + songElements.length + " song elements");
-        for(var i in songElements) {
-          var songElement = songElements[i];
-          var songUrl = songElement.alt;
+        var ytButtonsStart = document.querySelectorAll('.ytButtonStart');
+        //console.log("found " + ytButtonsStart.length + " song elements");
+        for(var i in ytButtonsStart) {
+          var ytButtonStart = ytButtonsStart[i];
+          var songUrl = ytButtonStart.alt;
           if(songUrl != undefined){
             console.log("Setting click for play button with url " + songUrl);
-            songElement.onclick = function(e){
+            ytButtonStart.onclick = function(e){
+              var songId = e.target.id.substring("ytButtonStart_".length);
               var videoUrl = e.target.alt;
               console.log("Loading video "+ videoUrl);
-              playVideo(videoUrl, "YT")
+              playVideo(songId, videoUrl, "YT");
             }
+          }
+        };
+        var ytButtonsStop = document.querySelectorAll(".ytButtonStop");
+        //console.log("found " + ytButtonsStop.length + " song elements");
+        for(var i in ytButtonsStop) {
+          var ytButtonStop = ytButtonsStop[i];
+          ytButtonStop.onclick = function(e){
+            var songId = e.target.id.substring("ytButtonStop_".length);
+            console.log("Stopping video");
+            stopVideo(songId, "YT");
           }
         };
       };
@@ -141,9 +202,13 @@
       var player = new Player();
       player.initSoundcloud("sc_player", "sc-widget");
       
-      function playVideo(videoUrl, videoSource){
-        player.playVideo(videoUrl, videoSource)
-      }
+      function playVideo(songId, videoUrl, videoSource){
+        player.playVideo(songId, videoUrl, videoSource)
+      };
+      
+      function stopVideo(songId, videoSource){
+        player.stopVideo(songId, videoSource);
+      };
       
       // 2. This code loads the IFrame Player API code asynchronously.
       var tag = document.createElement('script');
@@ -157,8 +222,7 @@
       function onYouTubeIframeAPIReady() {
         console.log("Init Youtube");
         player.initYoutube("yt_player");
-        
-      }
+      };
       
     </script>
   </body>
