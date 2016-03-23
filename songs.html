@@ -5,40 +5,47 @@
         <script type="text/javascript" src="https://w.soundcloud.com/player/api.js"></script>
     </head>
   <body>
-    <ul>
-      <li>
-        <div id="1">
-          <span>Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
-          <img id="ytButtonStart_1" class="ytButtonStart" src="http://songs.klarblick.org/static/yt_play.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
-          <img id="ytButtonStop_1" class="ytButtonStop" src="http://songs.klarblick.org/static/yt_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
-          <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
-        </div>
-      </li>
-      <li>
-        <div id="2">
-          <span>Lukas Graham - 7 Years</span>
-          <img id="scButtonStart_2" class="scButtonStart" src="http://songs.klarblick.org/static/sc_play.svg" alt="https://soundcloud.com/lukasgraham/7-years" style="width: 20px; height: 20px;"/>
-          <img id="scButtonStop_2" class="scButtonStop" src="http://songs.klarblick.org/static/sc_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
-          <br/><a href="https://soundcloud.com/lukasgraham/7-years" target="_blank" >Source</a>
-        </div>
-      </li>
-    </ul>
+    <div id="songlist">
+      <ul>
+        <!--
+        <li>
+          <div id="1">
+            <span>Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
+            <img id="ytButtonStart_1" class="ytButtonStart" src="http://songs.klarblick.org/static/yt_play.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
+            <img id="ytButtonStop_1" class="ytButtonStop" src="http://songs.klarblick.org/static/yt_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
+            <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
+          </div>
+        </li>
+        <li>
+          <div id="2">
+            <span>Lukas Graham - 7 Years</span>
+            <img id="scButtonStart_2" class="scButtonStart" src="http://songs.klarblick.org/static/sc_play.svg" alt="https://soundcloud.com/lukasgraham/7-years" style="width: 20px; height: 20px;"/>
+            <img id="scButtonStop_2" class="scButtonStop" src="http://songs.klarblick.org/static/sc_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
+            <br/><a href="https://soundcloud.com/lukasgraham/7-years" target="_blank" >Source</a>
+          </div>
+        </li>
+         -->
+      </ul>
+    </div>
     <!-- 1. The <iframe> (and video yt_player) will replace this <div> tag. -->
     <div id="yt_player" class="player" style="display: none;"></div>
     <div id="sc_player" class="player" style="display: none;">
         <iframe id="sc-widget" scrolling="no" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/231715226" frameborder="no"></iframe>
     </div>
-
+    
     <script type="text/javascript">
     
-      var Player = function(){
+      var Player = function(songlist){
+        this.songlist = songlist;
+        
         this.ytPlayerId;
         this.ytPlayer;
         this.scWidgetId;
         this.scPlayerId;
         this.scPlayer;
         
-        this.currentVideo;
+        this.currentSongId;
+        this.running = false;
       };
       
       Player.prototype.playVideo = function(songId, songKey, songSource){
@@ -53,10 +60,8 @@
           this._togglePlayer(this.scPlayerId);
           this._playVideoSc(songKey);
         }
+        this.currentSongId = songId;
         this._togglePlayButton(songId, songSource, "Start");
-        
-        this.currentVideo = songKey;
-        this.currentPlayer = songSource;
       };
       
       Player.prototype.stopVideo = function(songId, songSource){
@@ -88,13 +93,14 @@
       
       Player.prototype.initYoutube = function(playerId){
         this.ytPlayerId = playerId;
+        
         this.ytPlayer = new YT.Player(playerId, {
           height: '390',
           width: '640',
           videoId: 'M7lc1UVf-VE',
           events: {
-            'onReady': this._onYtPlayerReady,
-            'onStateChange': this._onYtPlayerStateChange
+            'onReady': onYtPlayerReady,
+            'onStateChange': onYtPlayerStateChange
           }
         });
       };
@@ -106,21 +112,6 @@
         this.scPlayerId = playerId;
         this.scWidgetId = iframeId;
         this.scPlayer   = SC.Widget(this.scWidgetId);
-        
-        
-        //this.scPlayer.bind(SC.Widget.Events.READY, function() {
-          //this.scPlayer.bind(SC.Widget.Events.PLAY, function() {
-            // get information about currently playing sound
-            //this.scPlayer.getCurrentSound(function(currentSound) {
-              //console.log('sound ' + currentSound.title + 'began to play');
-              //document.getElementById("songname").innerHTML = currentSound.username + " - " + currentSound.title;
-            //});
-          //});
-          
-          // set new volume level
-          // widget.setVolume(50);
-          // get the value of the current position
-        //});
         
         var scButtonsStart = document.querySelectorAll('.scButtonStart');
         console.log("found " + scButtonsStart.length + " song elements");
@@ -167,14 +158,139 @@
         this.scPlayer.pause();
       }
       
-      Player.prototype._onYtPlayerReady = function(){
+      Player.prototype.run = function(songlist){
+        if(songlist != undefined){
+          this.songlist = songlist;
+        }
+        this.running = true;
+      }
+      
+      Player.prototype.playNextSong = function(){
+        if(this.songlist != undefined){
+          for(var i in this.songlist){
+            var song = songlist[i];
+            var songId = song.id;
+            var currentPos = 0;
+            if(songId != undefined && songId == this.currentSongId){
+              currentPos = song.pos;
+            }
+            var songpos = song.pos;
+            if(songpos != undefined && songpos > currentPos){
+              var songKey = song.url;
+              var songSource = song.source;
+              this.playVideo(songpos, songKey, songSource);
+              break;
+            }
+          }
+        }
+      }
+      
+      var songlist = [
+          {
+            id: 1,
+            pos: 1,
+            title: "Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)",
+            url: "https://www.youtube.com/v/KuAXv5qaSbQ",
+            source: "YT"
+          },
+          {
+            id: 2,
+            pos: 2,
+            title: "Warpaint - Disco//Very - Keep It Healthy (Official Video)",
+            url: "https://www.youtube.com/v/ie6plcFQ330",
+            source: "YT"
+          },
+          {
+            id: 3,
+            pos: 3,
+            title: "Lukas Graham - 7 Years",
+            url: "https://soundcloud.com/lukasgraham/7-years",
+            source: "SC"
+          }
+        ];
+        
+      // create song list 
+      var songlistUl = document.getElementById("songlist").getElementsByTagName("ul")[0];
+      for(var i in songlist){
+        var song = songlist[i];
+        
+        var songLi = document.createElement("li");
+        var songDiv = document.createElement("div");
+        songDiv.setAttribute("id", song.id);
+        var songSpan = document.createElement("span");
+        songSpan.innerHTML = song.title;
+        var imgStart = document.createElement("img");
+        if(song.source == "YT"){
+          imgStart.setAttribute("id", "ytButtonStart_" + song.id);
+          imgStart.setAttribute("class", "ytButtonStart");
+          imgStart.setAttribute("src", "http://songs.klarblick.org/static/yt_play.svg");
+        }
+        else if(song.source == "SC"){
+          imgStart.setAttribute("id", "scButtonStart_" + song.id);
+          imgStart.setAttribute("class", "scButtonStart");
+          imgStart.setAttribute("src", "http://songs.klarblick.org/static/sc_play.svg");
+        }
+        imgStart.setAttribute("alt", song.url);
+        imgStart.setAttribute("style", "width: 20px; height: 20px;");
+        
+        var imgStop = document.createElement("img");
+        if(song.source == "YT"){
+          imgStop.setAttribute("id", "ytButtonStop_" + song.id);
+          imgStop.setAttribute("class", "ytButtonStop");
+          imgStop.setAttribute("src", "http://songs.klarblick.org/static/yt_pause.svg");
+        }
+        else if(song.source == "SC"){
+          imgStop.setAttribute("id", "scButtonStop_" + song.id);
+          imgStop.setAttribute("class", "scButtonStop");
+          imgStop.setAttribute("src", "http://songs.klarblick.org/static/sc_pause.svg");
+        }
+        imgStop.setAttribute("alt", song.url);
+        imgStop.setAttribute("style", "width: 20px; height: 20px; display: none;");
+        
+        var brTag = document.createElement("br");
+        var songLink = document.createElement("a");
+        songLink.setAttribute("href", song.url);
+        songLink.setAttribute("target", "_blank");
+        songLink.innerHTML = "Source";
+        /*
+        <span>Alice Phoebe Lou - Fiery Heart, Fiery Mind (official video)</span>
+        <img id="ytButtonStart_1" class="ytButtonStart" src="http://songs.klarblick.org/static/yt_play.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px;"/>
+        <img id="ytButtonStop_1" class="ytButtonStop" src="http://songs.klarblick.org/static/yt_pause.svg" alt="https://www.youtube.com/v/KuAXv5qaSbQ" style="width: 20px; height: 20px; display: none"/>
+        <br/><a href="https://www.youtube.com/watch?v=KuAXv5qaSbQ" target="_blank" >Source</a>
+        */
+        
+        songDiv.appendChild(songSpan);
+        songDiv.appendChild(imgStart);
+        songDiv.appendChild(imgStop);
+        songDiv.appendChild(brTag);
+        songDiv.appendChild(songLink);
+        
+        songLi.appendChild(songDiv);
+        
+        songlistUl.appendChild(songLi);
+      }
+      
+      // create player
+      
+      var player = new Player(songlist);
+      player.initSoundcloud("sc_player", "sc-widget");
+      
+      function playVideo(songId, videoUrl, videoSource){
+        player.playVideo(songId, videoUrl, videoSource)
+      };
+      
+      function stopVideo(songId, videoSource){
+        player.stopVideo(songId, videoSource);
+      };
+      
+      function onYtPlayerReady(){
         var ytButtonsStart = document.querySelectorAll('.ytButtonStart');
         //console.log("found " + ytButtonsStart.length + " song elements");
         for(var i in ytButtonsStart) {
           var ytButtonStart = ytButtonsStart[i];
           var songUrl = ytButtonStart.alt;
           if(songUrl != undefined){
-            console.log("Setting click for play button with url " + songUrl);
+            //console.log("Setting click for play button with url " + songUrl);
             ytButtonStart.onclick = function(e){
               var songId = e.target.id.substring("ytButtonStart_".length);
               var videoUrl = e.target.alt;
@@ -195,19 +311,16 @@
         };
       };
       
-      Player.prototype._onYtPlayerStateChange = function(){
-        
-      };
-      
-      var player = new Player();
-      player.initSoundcloud("sc_player", "sc-widget");
-      
-      function playVideo(songId, videoUrl, videoSource){
-        player.playVideo(songId, videoUrl, videoSource)
-      };
-      
-      function stopVideo(songId, videoSource){
-        player.stopVideo(songId, videoSource);
+      function onYtPlayerStateChange(e){
+        console.log('YT Player State is:', e.data);
+        var ytPlayerState = e.data;
+        if(e.data == "0"){
+          //player has ended a video
+          if(player.running){
+            player.stopVideo(player.currentSongId, "YT")
+            player.playNextSong();
+          }
+        }
       };
       
       // 2. This code loads the IFrame Player API code asynchronously.
@@ -222,6 +335,8 @@
       function onYouTubeIframeAPIReady() {
         console.log("Init Youtube");
         player.initYoutube("yt_player");
+        
+        player.run();
       };
       
     </script>
