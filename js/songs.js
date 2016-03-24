@@ -7,8 +7,15 @@ var Player = function(songlist){
     this.scPlayerId;
     this.scPlayer;
     
-    this.currentSongId;
+    this.currentSong;
     this.running = false;
+};
+
+Player.prototype.run = function(songlist){
+    if(songlist != undefined){
+      this.songlist = songlist;
+    }
+    this.running = true;
 };
 
 Player.prototype.playVideo = function(songId, songKey, songSource){
@@ -23,7 +30,8 @@ Player.prototype.playVideo = function(songId, songKey, songSource){
       this._togglePlayer(this.scPlayerId);
       this._playVideoSc(songKey);
     }
-    this.currentSongId = songId;
+    
+    this.currentSong = this._getSong(songId);
     this._togglePlayButton(songId, songSource, "Start");
 };
 
@@ -37,6 +45,52 @@ Player.prototype.stopVideo = function(songId, songSource){
       this._stopVideoSc();
     }
     this._togglePlayButton(songId, songSource, "Stop");
+};
+
+Player.prototype.playNextSong = function(){
+    if(this.songlist != undefined){
+        console.log("playing next song in songlist..");
+        var currentPos = 0;
+        if(this._hasCurrentSong()){
+            currentPos = this.currentSong.pos;
+        }
+        var firstSong;
+        var nextSong;
+        for(var i in this.songlist){
+            var song = this.songlist[i];
+            if(i == 0){
+                firstSong = song;
+            }
+            var songId = song.id;
+            var songpos = song.pos;
+            if(songpos != undefined && songpos > currentPos){
+                nextSong = song;
+                var songKey = nextSong.url;
+                var songSource = nextSong.source;
+                break;
+            }
+        }
+        if(nextSong != undefined && nextSong != null){
+            this.playVideo(nextSong.pos, nextSong.url, nextSong.source);
+        }
+        else{
+            this.playVideo(firstSong.pos, firstSong.url, firstSong.source);
+        }
+    }
+};
+
+Player.prototype._getSong = function(id){
+    for(var i in this.songlist){
+        var song = this.songlist[i];
+        if(id == song.id){
+            return song;
+        }
+    }
+    return null;
+};
+
+Player.prototype._hasCurrentSong = function(){
+    return this.currentSong != undefined && this.currentSong != null;
 };
 
 Player.prototype._togglePlayer = function(playerId){
@@ -75,6 +129,10 @@ Player.prototype.initSoundcloud = function(playerId, iframeId){
     this.scPlayerId = playerId;
     this.scWidgetId = iframeId;
     this.scPlayer   = SC.Widget(this.scWidgetId);
+    this.scPlayer.bind(SC.Widget.Events.FINISH, function(player, data){
+        console.log('SC finished');
+        _onPlayerHasFinished("SC");
+    });
     
     var scButtonsStart = document.querySelectorAll('.scButtonStart');
     console.log("found " + scButtonsStart.length + " song elements");
@@ -119,34 +177,7 @@ Player.prototype._playVideoSc = function(videoUrl){
 
 Player.prototype._stopVideoSc = function(){
     this.scPlayer.pause();
-}
-
-Player.prototype.run = function(songlist){
-    if(songlist != undefined){
-      this.songlist = songlist;
-    }
-    this.running = true;
-}
-
-Player.prototype.playNextSong = function(){
-    if(this.songlist != undefined){
-      for(var i in this.songlist){
-        var song = this.songlist[i];
-        var songId = song.id;
-        var currentPos = 0;
-        if(songId != undefined && songId == this.currentSongId){
-          currentPos = song.pos;
-        }
-        var songpos = song.pos;
-        if(songpos != undefined && songpos > currentPos){
-          var songKey = song.url;
-          var songSource = song.source;
-          this.playVideo(songpos, songKey, songSource);
-          break;
-        }
-      }
-    }
-}
+};
 
 var _player;
 
@@ -279,11 +310,14 @@ function onYtPlayerReady(){
 function onYtPlayerStateChange(e){
     console.log('YT Player State is:', e.data);
     var ytPlayerState = e.data;
-    if(e.data == "0"){
-      //player has ended a video
-      if(_player.running){
-        _player.stopVideo(_player.currentSongId, "YT")
-        _player.playNextSong();
-      }
+    if(e.data == "0"){ //player has ended a video
+      _onPlayerHasFinished("YT")
     }
 };
+
+function _onPlayerHasFinished(source){
+    if(_player.running && _player._hasCurrentSong()){
+        _player.stopVideo(_player.currentSong.id, source)
+        _player.playNextSong();
+    }
+}
